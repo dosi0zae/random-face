@@ -271,8 +271,8 @@ function getDetector() {
   detectorP = detectorP || (async () => {
     const fileset = await FilesetResolver.forVisionTasks('./mediapipe/wasm');
     return FaceDetector.createFromOptions(fileset, {
-      baseOptions: { modelAssetPath: './mediapipe/blaze_face_short_range.tflite', delegate: 'CPU' },
-      runningMode: 'IMAGE', minDetectionConfidence: .55,
+      baseOptions: { modelAssetPath: './mediapipe/blaze_face_full_range.tflite', delegate: 'CPU' },
+      runningMode: 'IMAGE', minDetectionConfidence: .4,
     });
   })();
   return detectorP;
@@ -282,7 +282,7 @@ function getDetector() {
 async function detectFaces(img) {
   const det = await getDetector();
   const W = img.naturalWidth, H = img.naturalHeight;
-  const scale = Math.min(1, 2400 / Math.max(W, H));
+  const scale = Math.min(1, 3200 / Math.max(W, H));
   const base = document.createElement('canvas');
   base.width = Math.round(W * scale); base.height = Math.round(H * scale);
   base.getContext('2d').drawImage(img, 0, 0, base.width, base.height);
@@ -300,7 +300,7 @@ async function detectFaces(img) {
     }
   };
   run(0, 0, BW, BH);
-  for (const n of [2, 3, 4]) {
+  for (const n of [2, 3, 4, 6]) {
     const tw = BW / n * 1.35, th = BH / n * 1.35;
     for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) {
       const sx = Math.max(0, Math.min(BW - tw, (BW / n) * i - (tw - BW / n) / 2));
@@ -313,7 +313,7 @@ async function detectFaces(img) {
   found.sort((a, b) => b.score - a.score);
   const keep = [];
   for (const f of found) {
-    if (f.score < .6) continue;
+    if (f.score < .5) continue;
     const dup = keep.some(k => {
       const ix = Math.max(0, Math.min(f.x + f.w, k.x + k.w) - Math.max(f.x, k.x));
       const iy = Math.max(0, Math.min(f.y + f.h, k.y + k.h) - Math.max(f.y, k.y));
