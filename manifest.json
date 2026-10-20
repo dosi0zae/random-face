@@ -1,6 +1,6 @@
 {
-  "name": "얼굴 뽑기",
-  "short_name": "얼굴 뽑기",
+  "name": "Random Face",
+  "short_name": "Random Face",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#000000",
