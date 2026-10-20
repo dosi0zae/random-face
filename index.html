@@ -322,6 +322,11 @@ async function detectFaces(img) {
     });
     if (!dup) keep.push(f);
   }
+  // 다른 얼굴들보다 지나치게 작은 건 오탐(무늬·그림)으로 보고 제외
+  if (keep.length >= 3) {
+    const ws = keep.map(f => f.w * BW).sort((a, b) => a - b), med = ws[ws.length >> 1];
+    for (let i = keep.length - 1; i >= 0; i--) if (keep[i].w * BW < med * .35 && keep[i].score < .8) keep.splice(i, 1);
+  }
   // 동그라미가 얼굴을 넉넉히 감싸도록 정사각형 + 확장 (화면 비율 기준)
   return keep.map(f => {
     const cx = (f.x + f.w / 2) * BW, cy = (f.y + f.h / 2) * BH;
