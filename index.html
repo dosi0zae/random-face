@@ -73,19 +73,40 @@
   #spot { position: absolute; border-radius: 50%; pointer-events: none; opacity: 0;
     box-shadow: 0 0 0 200vmax rgba(0,0,0,.62); transition: left .12s ease-out, top .12s ease-out, width .12s, height .12s, opacity .3s; }
   #spot.on { opacity: 1; }
-  #spot.win { transition: left .2s, top .2s, width .5s cubic-bezier(.3,1.5,.5,1), height .5s cubic-bezier(.3,1.5,.5,1);
-    box-shadow: 0 0 0 200vmax rgba(0,0,0,.7), 0 0 40px rgba(255,243,92,.45); }
-  /* 당첨 링: 테두리만 보이는 무지개 고리가 빙글빙글 */
-  #spot.win::before { content: ''; position: absolute; inset: -5px; border-radius: 50%; padding: 6px;
+  /* ---- 당첨 화면: 당 (얼굴) 첨 ---- */
+  #win { --s: min(52vh, 40vw); position: fixed; inset: 0; z-index: 6; display: none;
+    align-items: center; justify-content: center; gap: min(4vw, 40px);
+    background: rgba(0,0,0,0); transition: background .6s; }
+  #win.on { display: flex; background: rgba(0,0,0,.94); animation: winbg .6s ease-out; }
+  @keyframes winbg { from { background: rgba(0,0,0,0); } }
+  #win.out { opacity: 0; transition: opacity .3s; }
+  #wface { position: relative; width: var(--s); height: var(--s); flex: none;
+    transition: transform .95s cubic-bezier(.16,1,.3,1); will-change: transform; }
+  #wface img { width: 100%; height: 100%; border-radius: 50%; display: block; object-fit: cover; }
+  /* 무지개 링 (착지 후 빙글빙글) */
+  #wface::before { content: ''; position: absolute; inset: calc(var(--s) * -.035); border-radius: 50%;
+    padding: calc(var(--s) * .028); opacity: 0; transition: opacity .3s;
     background: conic-gradient(#fff35c, #ff8a1f, #ff3d7f, #b44dff, #3df2ff, #b8ff3d, #fff35c);
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor; mask-composite: exclude;
-    animation: spin 2.4s linear infinite; }
+    -webkit-mask-composite: xor; mask-composite: exclude; animation: spin 2.4s linear infinite; }
+  #wface::after { content: ''; position: absolute; inset: 0; border-radius: 50%; opacity: 0; transition: opacity .4s;
+    box-shadow: 0 0 calc(var(--s) * .12) rgba(255,243,92,.45), 0 0 calc(var(--s) * .3) rgba(255,61,127,.25); }
+  #win.land #wface::before, #win.land #wface::after { opacity: 1; }
   @keyframes spin { to { transform: rotate(360deg); } }
-  #badge { position: absolute; transform: translate(-50%, -100%) scale(.6); opacity: 0; pointer-events: none; line-height: 1;
-    background: var(--lemon); color: #000; font-weight: 800; font-size: 22px; padding: 10px 18px; border-radius: 999px;
-    box-shadow: 0 6px 24px rgba(255,243,92,.35); transition: transform .45s cubic-bezier(.3,1.6,.5,1), opacity .2s; white-space: nowrap; }
-  #badge.on { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+
+  #win .ch { font-family: ui-rounded, "SF Pro Rounded", -apple-system, "Apple SD Gothic Neo", sans-serif;
+    font-weight: 900; line-height: 1; font-size: min(18vw, 26vh); flex: none;
+    color: transparent; background: linear-gradient(160deg, #fff35c 10%, #ffb21c 50%, #ff3d7f 95%);
+    -webkit-background-clip: text; background-clip: text;
+    filter: drop-shadow(0 0 .08em rgba(255,200,60,.4));
+    opacity: 0; transition: transform .55s cubic-bezier(.3,1.6,.5,1), opacity .25s; }
+  #win .ch.l { transform: translateX(40%) scale(.4) rotate(-12deg); }
+  #win .ch.r { transform: translateX(-40%) scale(.4) rotate(12deg); }
+  #win.land .ch { opacity: 1; transform: none; }
+  #win.land .ch.r { transition-delay: .12s; }
+  #win .tap { position: absolute; bottom: calc(28px + env(safe-area-inset-bottom)); left: 0; right: 0; text-align: center;
+    color: var(--label3); font-size: 15px; opacity: 0; transition: opacity .4s 1s; }
+  #win.land .tap { opacity: 1; }
 
   #busy { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; gap: 14px;
     background: rgba(0,0,0,.55); border-radius: 18px; color: var(--label); font-size: 17px; font-weight: 600; line-height: 1.2; }
@@ -105,7 +126,7 @@
   #go[hidden] { display: none; }
   body.rolling #go { opacity: 0; pointer-events: none; }
 
-  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 5; }
+  #fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 7; }
 
   /* ---- 설정 시트 / 알림 (iOS) ---- */
   .overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center;
@@ -173,7 +194,6 @@
     <img id="photo" alt="">
     <div id="faces"></div>
     <div id="spot"></div>
-    <div id="badge">🎉 당첨!</div>
     <div id="busy"><div class="spinner"></div><span id="busyText">얼굴 찾는 중…</span></div>
   </div>
   <input type="file" id="file" accept="image/*" hidden>
@@ -183,6 +203,12 @@
   <div class="sub" id="status">&nbsp;</div>
   <button id="go" hidden>뽑기</button>
 </footer>
+<div id="win">
+  <span class="ch l">당</span>
+  <div id="wface"><img id="wimg" alt=""></div>
+  <span class="ch r">첨</span>
+  <div class="tap">화면을 탭하면 돌아가요</div>
+</div>
 <canvas id="fx"></canvas>
 
 <div class="overlay" id="sheet">
@@ -256,6 +282,15 @@ function tone(freq, dur, type = 'square', vol = .08) {
 }
 const tick = p => tone(500 + p * 700, .04, 'square', .05);
 const chime = () => [784, 988, 1319, 1568].forEach((f, i) => setTimeout(() => tone(f, .6, 'sine', .12), i * 90));
+// 지이잉: 올라가는 스윕음
+function whoosh() {
+  const a = audio(); if (!a) return;
+  const t = a.currentTime, o = a.createOscillator(), g = a.createGain();
+  o.type = 'sawtooth'; o.frequency.setValueAtTime(180, t); o.frequency.exponentialRampToValueAtTime(1400, t + .85);
+  const f = a.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(600, t); f.frequency.exponentialRampToValueAtTime(5000, t + .85);
+  g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.07, t + .15); g.gain.exponentialRampToValueAtTime(.0001, t + .9);
+  o.connect(f).connect(g).connect(a.destination); o.start(t); o.stop(t + .95);
+}
 function popSound() {
   const a = audio(); if (!a) return;
   const t = a.currentTime, len = a.sampleRate * .12, buf = a.createBuffer(1, len, a.sampleRate), d = buf.getChannelData(0);
@@ -336,7 +371,7 @@ async function detectFaces(img) {
 }
 
 // ---------- 화면 ----------
-const photo = $('photo'), stage = $('stage'), facesEl = $('faces'), spot = $('spot'), badge = $('badge');
+const photo = $('photo'), stage = $('stage'), facesEl = $('faces'), spot = $('spot');
 
 function fitPhoto() {
   const avail = innerHeight - $('stage').closest('main').getBoundingClientRect().top - document.querySelector('footer').offsetHeight - 8;
@@ -367,7 +402,7 @@ function renderFaces() {
 const candidates = () => faces.map((f, i) => i).filter(i => !faces[i].off && !(settings.unique && faces[i].done));
 
 function clearWin() {
-  spot.className = ''; badge.classList.remove('on');
+  spot.className = '';
 }
 
 async function loadFile(file) {
@@ -468,17 +503,55 @@ async function roll(pool, faces) {
   placeSpot(faces[winner]); tick(1);
   await sleep(380);
 
-  // 당첨!
-  spot.classList.add('win'); placeSpot(faces[winner], 1.25);
+  // 당첨! 얼굴이 화면 중앙으로 지이잉 확대
   const f = faces[winner];
-  Object.assign(badge.style, { left: (f.x + f.w / 2) * 100 + '%', top: Math.max(0, f.y - f.h * .2) * 100 + '%' });
-  badge.classList.add('on');
-  popSound(); chime();
-  const r = photo.getBoundingClientRect();
-  confetti(r.left + (f.x + f.w / 2) * r.width, r.top + (f.y + f.h / 2) * r.height, f.w * r.width);
   f.done = true;
-  await sleep(600);
+  await showWinner(f);
 }
+
+// ---------- 당첨 화면: 당 (얼굴) 첨 ----------
+const win = $('win'), wface = $('wface');
+function cropFace(f) {
+  // 원본 해상도에서 얼굴 주변을 정사각형으로 잘라냄 (머리카락까지 살짝 여유)
+  const W = photo.naturalWidth, H = photo.naturalHeight;
+  const cx = (f.x + f.w / 2) * W, cy = (f.y + f.h / 2) * H;
+  const size = Math.max(f.w * W, f.h * H) * 1.05;
+  const c = document.createElement('canvas'); c.width = c.height = 720;
+  const g = c.getContext('2d');
+  g.fillStyle = '#111'; g.fillRect(0, 0, 720, 720);
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(photo, cx - size / 2, cy - size / 2, size, size, 0, 0, 720, 720);
+  return c.toDataURL('image/jpeg', .92);
+}
+async function showWinner(f) {
+  $('wimg').src = cropFace(f);
+  await $('wimg').decode().catch(() => {});
+  // 사진 속 얼굴 위치 → 화면 중앙으로 (FLIP 애니메이션)
+  const r = photo.getBoundingClientRect();
+  const from = { x: r.left + (f.x + f.w / 2) * r.width, y: r.top + (f.y + f.h / 2) * r.height, s: f.w * r.width };
+  win.classList.remove('land', 'out'); win.classList.add('on');
+  const to = wface.getBoundingClientRect();
+  const dx = from.x - (to.left + to.width / 2), dy = from.y - (to.top + to.height / 2), k = from.s / to.width;
+  wface.style.transition = 'none';
+  wface.style.transform = `translate(${dx}px, ${dy}px) scale(${k})`;
+  void wface.offsetWidth;
+  spot.classList.remove('on');
+  whoosh();
+  wface.style.transition = '';
+  wface.style.transform = '';
+  await sleep(950);
+  // 착지: 당 / 첨 + 색종이
+  win.classList.add('land');
+  popSound(); chime();
+  const c = wface.getBoundingClientRect();
+  confetti(c.left + c.width / 2, c.top + c.height / 2, c.width * .8);
+  await sleep(700);
+}
+win.addEventListener('click', () => {
+  if (!win.classList.contains('land')) return;
+  win.classList.add('out');
+  setTimeout(() => { win.classList.remove('on', 'land', 'out'); clearWin(); }, 300);
+});
 
 // ---------- 색종이 (동그란 조각, 팡 터졌다 사라짐) ----------
 const fx = $('fx'), ctx = fx.getContext('2d');
